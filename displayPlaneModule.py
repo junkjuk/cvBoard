@@ -43,7 +43,7 @@ class displayPlane():
                 positions.append(dot)
         return positions
 
-    def gomografy(self, img):
+    def transformation(self, img):
         self.outPoints = np.float32([[0,0],[960, 0],[960,540], [0,540]])
         currentPoints = np.float32([self.cornersPosition[2], self.cornersPosition[3], self.cornersPosition[4],
                                     self.cornersPosition[1]])
@@ -58,19 +58,23 @@ class displayPlane():
         return [int(secondPoint[0][0][0]), int(secondPoint[0][0][1])]
 
 
-    def test(self,point):
+    def isInPlane(self,point):
         a = self.isUpper([self.cornersPosition[1], self.cornersPosition[4]], point)
         b = self.isUpper([self.cornersPosition[2], self.cornersPosition[3]], point)
-        c = self.isUpper([self.swap(self.cornersPosition[3]), self.swap(self.cornersPosition[4])], self.swap(point))
-        d = self.isUpper([self.swap(self.cornersPosition[1]), self.swap(self.cornersPosition[2])], self.swap(point))
+        c = self.isUpper(
+            [self.swapCordsInPoint(self.cornersPosition[3]), self.swapCordsInPoint(self.cornersPosition[4])],
+             self.swapCordsInPoint(point))
+        d = self.isUpper(
+            [self.swapCordsInPoint(self.cornersPosition[1]), self.swapCordsInPoint(self.cornersPosition[2])],
+             self.swapCordsInPoint(point))
         if a == False and c == False and d == False and b == True:
             return True
         return False
 
     def isUpper(self, linePoints, point):
         line = self.getVector(linePoints[0], linePoints[1])
-
         helpVector = self.getVector(linePoints[0], point)
+
         skewProduct = self.skewProduct(line, helpVector)
         if skewProduct < 0:
             return False
@@ -82,5 +86,5 @@ class displayPlane():
     def skewProduct(self, firstVector, secondVector):
         return firstVector[0] * secondVector[1] - firstVector[1] * secondVector[0]
 
-    def swap(self, arr):
+    def swapCordsInPoint(self, arr):
         return [arr[1], arr[0]]

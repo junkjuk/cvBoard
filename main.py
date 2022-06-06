@@ -15,9 +15,7 @@ while True:
     success, img = cap.read()
     img = detector.findHands(img)
     lmList = detector.findPosition(img)
-    # print(mouse.get_position())
     if len(lmList) != 0:
-        print(lmList[8])
         cursor.move(lmList[8][1], lmList[8][2])
     cTime = time.time()
     fps = 1 / (cTime - pTime)

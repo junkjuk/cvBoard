@@ -8,13 +8,11 @@ class mousePosition():
         self.y = int(y)
 
     def move(self):
-        # print("move ",self.x, self.y)
         mouse.move(self.x, self.y)
 
     def moveTo(self, x, y):
         self.x = x
         self.y = y
-        print(self.x, self.y)
         mouse.move(self.x, self.y)
 
     @property

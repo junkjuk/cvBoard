@@ -1,9 +1,10 @@
 import cv2
 import mediapipe as mp
 import time
+import math
+
 import mouse
-import numpy as np
-import screeninfo
+
 import displayModule
 import displayPlaneModule
 import mousePositionModule
@@ -15,10 +16,8 @@ class handDetector():
         self.complexity = model_complexity
         self.detectionCon = min_detection_confidence
         self.trackCon = min_tracking_confidence
-
         self.mpHands = mp.solutions.hands
-        self.hands = self.mpHands.Hands(self.mode, self.maxHands,self.complexity, self.detectionCon, 0.9)
-        # self.hands = self.mpHands.Hands()
+        self.hands = self.mpHands.Hands(self.mode, self.maxHands,self.complexity, 0.6, 0.9)
         self.mpDraw = mp.solutions.drawing_utils
 
     def findHands(self, img, draw=True):
@@ -44,10 +43,21 @@ class handDetector():
                     cv2.circle(img, (cx, cy), 10, (255, 0, 255), cv2.FILLED)
         return lmList
 
+    def findDistance(self, firstPoint, secondPoint):
+        x = (secondPoint[0] + firstPoint[0])/2
+        y = (secondPoint[1] + firstPoint[1])/2
+        len = math.sqrt((secondPoint[0] - firstPoint[0])**2 + (secondPoint[1] - firstPoint[1])**2)
+        return [x, y], len;
+
+    def convertToPx(self, img, point):
+        h, w, c = img.shape
+        cx, cy = int(point[0] * w), int(point[1] * h)
+        return [cx, cy]
+
 def main():
     cap = cv2.VideoCapture(0)
-    cap.set(3,1000)
-    cap.set(4,1000)
+    cap.set(3,960)
+
     pTime = 0
     cTime = 0
 
@@ -56,7 +66,7 @@ def main():
     plane = displayPlaneModule.displayPlane()
     display = displayModule.display()
     detector = handDetector()
-
+    isClick = False
     while True:
         success, img = cap.read()
 
@@ -67,23 +77,30 @@ def main():
         plane.drowArea(img)
 
         cv2.aruco.drawDetectedMarkers(img, corners)
-        img = detector.findHands(img, False)
+        img = detector.findHands(img)
         lmList = detector.findPosition(img, 0, False)
-        # if len(lmList) != 0:
-        #     h, w, c = img.shape
-        #     cx, cy = int(lmList[8][1] * w), int(lmList[8][2] * h)
-        #     cv2.circle(img, (cx, cy), 5, (255, 0, 255), cv2.FILLED)
-            # print(plane.test([cx, cy]))
-            # display.moveMouse(lmList[8][1], lmList[8][2])
         cv2.imshow("Image2", img)
         cv2.waitKey(1)
         if len(lmList) != 0:
             h, w, c = img.shape
             cx, cy = int(lmList[8][1] * w), int(lmList[8][2] * h)
-            if plane.test([cx, cy]):
-                img = plane.gomografy(img)
+            cxm, cym = int(lmList[12][1] * w), int(lmList[12][2] * h)
+
+            pos, leng = detector.findDistance([cx, cy], [cxm, cym])
+            print(leng)
+            cv2.circle(img, (int(pos[0]),int( pos[1])), 5, (255, 0, 255), cv2.FILLED)
+            if plane.isInPlane([cx, cy]):
+                img = plane.transformation(img)
                 finger = plane.getTranspoint(img, cx, cy)
                 display.moveMouse(finger[0]/w, finger[1]/h)
+                if leng < 25:
+                    if not isClick:
+                        print("make click")
+                        mouse.click()
+                        isClick = True
+                else:
+                    print("no click")
+                    isClick = False
         cTime = time.time()
         fps = 1 / (cTime - pTime)
         pTime = cTime
